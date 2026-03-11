@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; background-color: #f5f5f5; color: #333; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .container { width: 100%; max-width: 380px; background: #fff; padding: 25px; border-radius: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); min-height: 750px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        h2 { font-size: 1.1rem; color: #1a4b8f; font-weight: 700; margin: 0; }
+        h3 { font-size: 0.9rem; font-weight: 700; color: #444; margin: 0; }
+
+        /* 그룹화 섹션 디자인 (메인) */
+        .group-section { background: #f8f9fa; border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #eee; }
+        .group-title { font-size: 0.9rem; font-weight: 800; color: #1a4b8f; margin-bottom: 10px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #edf2f7; }
+        .item-row:last-child { border-bottom: none; }
+        .item-main { font-size: 0.85rem; font-weight: 600; }
+        .item-sub { font-size: 0.7rem; color: #718096; margin-top: 2px; }
+        .item-dday { font-size: 0.85rem; font-weight: 800; color: #1a4b8f; min-width: 45px; text-align: right; }
+
+        /* 설정 카드 및 진행률 (두번째 페이지) */
+        .setting-card { background: #f0f4f8; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #d1d9e6; }
+        .progress-box { background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 10px; margin-top: 10px; }
+        .prog-bar-bg { background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden; margin: 5px 0; }
+        .prog-bar-fill { background: #1a4b8f; height: 100%; transition: width 0.3s; }
+        .prog-btns { display: flex; gap: 4px; margin-top: 5px; }
+        .prog-btn { flex: 1; padding: 4px; font-size: 0.65rem; border: 1px solid #ddd; background: #fff; border-radius: 4px; cursor: pointer; }
+
+        /* 입력 카드 */
+        .input-card { background: #f9f9f9; padding: 10px; border-radius: 10px; margin-bottom: 8px; border: 1px solid #eee; position: relative; }
+        input { width: 100%; padding: 6px; margin-top: 3px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 0.8rem; }
+        .remove-btn { position: absolute; right: 10px; top: 10px; border: none; background: none; color: #ff6b6b; cursor: pointer; }
+
+        /* 타이머 디자인 */
+        .clock-wrapper { position: relative; width: 140px; height: 140px; margin: 0 auto 15px; border-radius: 50%; border: 5px solid #f0f0f0; display: flex; justify-content: center; align-items: center; }
+        .blue-sector { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#1a4b8f 0% 0%, transparent 0% 100%); }
+        .inner-circle { position: absolute; width: 125px; height: 125px; background: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        .timer-val { font-size: 2rem; font-weight: 800; }
+        .btn-primary { width: 100%; padding: 14px; border: none; border-radius: 12px; background: #1a4b8f; color: #fff; font-weight: 600; cursor: pointer; }
+        .mode-selector { display: flex; gap: 6px; margin-bottom: 12px; justify-content: center; }
+        .mode-btn { padding: 5px 12px; border-radius: 12px; border: 1px solid #ddd; background: #fff; font-size: 0.7rem; cursor: pointer; }
+        .mode-btn.active { background: #1a4b8f; color: #fff; }
+        .add-btn { background: #eef2f7; border: none; padding: 3px 8px; border-radius: 5px; color: #1a4b8f; font-weight: bold; cursor: pointer; font-size: 0.75rem; }
+    </style>
+</head>
+<body onload="init()">
+
+<div class="container">
+    <div id="main-page">
+        <div class="header">
+            <h2>나의 학습 현황</h2>
+            <button onclick="showPage('settings-page')" style="background:none; border:none; cursor:pointer; font-size:1.1rem;">⚙️</button>
+        </div>
+        <div class="mode-selector">
+            <button id="mode-focus" class="mode-btn active" onclick="setMode('focus')">집중</button>
+            <button id="mode-rest" class="mode-btn" onclick="setMode('rest')">휴식</button>
+        </div>
+        <div class="clock-wrapper">
+            <div id="sector" class="blue-sector"></div>
+            <div class="inner-circle"><p id="time" class="timer-val">50:00</p></div>
+        </div>
+        <button id="timerBtn" class="btn-primary" onclick="toggleTimer()" style="margin-bottom:20px;">집중 시작하기</button>
+        <div id="unified-timeline"></div>
+    </div>
+
+    <div id="settings-page" style="display: none;">
+        <div class="header">
+            <button onclick="showPage('main-page')" style="background:none; border:none; cursor:pointer;">← 뒤로</button>
+            <h2>설정 및 회독 관리</h2>
+        </div>
+        
+        <div class="setting-card">
+            <h3 style="font-size:0.8rem; margin-top:0;">⏱ 뽀모도로 시간 (분)</h3>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="input-focus-min" value="50">
+                <input type="number" id="input-rest-min" value="10">
+            </div>
+        </div>
+
+        <div id="progress-list-section">
+            </div>
+
+        <div style="margin-top:20px; border-top:1px solid #eee; padding-top:15px;">
+            <div style="display:flex; justify-content:space-between;"><h3>📝 시험 추가</h3> <button class="add-btn" onclick="addInputRow('exam')">+ 추가</button></div>
+            <div id="exam-input-list"></div>
+        </div>
+        <div style="margin-top:15px;">
+            <div style="display:flex; justify-content:space-between;"><h3>📂 과제 추가</h3> <button class="add-btn" onclick="addInputRow('hw')">+ 추가</button></div>
+            <div id="hw-input-list"></div>
+        </div>
+        <div style="margin-top:15px;">
+            <div style="display:flex; justify-content:space-between;"><h3>🏫 수업 추가</h3> <button class="add-btn" onclick="addInputRow('class')">+ 추가</button></div>
+            <div id="class-input-list"></div>
+        </div>
+        <button class="btn-primary" onclick="saveAll()">저장하고 적용하기</button>
+    </div>
+</div>
+
+<audio id="alarm-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+<script>
+    let focusMin = 50, restMin = 10, timeLeft = 3000, totalTime = 3000, timer = null, isRunning = false;
+    let dataStore = { exam: [], hw: [], class: [] };
+
+    function init() {
+        const saved = localStorage.getItem('study_mate_final');
+        if (saved) {
+            const data = JSON.parse(saved);
+            focusMin = data.focusMin || 50;
+            restMin = data.restMin || 10;
+            dataStore = data.dataStore || { exam: [], hw: [], class: [] };
+            document.getElementById('input-focus-min').value = focusMin;
+            document.getElementById('input-rest-min').value = restMin;
+            
+            for (const type in dataStore) {
+                dataStore[type].forEach(item => rebuildInputRow(type, item));
+            }
+        }
+        updateMainUI();
+        updateProgressPage();
+        setMode('focus');
+    }
+
+    function showPage(p) {
+        document.getElementById('main-page').style.display = p === 'main-page' ? 'block' : 'none';
+        document.getElementById('settings-page').style.display = p === 'settings-page' ? 'block' : 'none';
+        if (p === 'settings-page') updateProgressPage();
+    }
+
+    function addInputRow(type) { rebuildInputRow(type, { name: '', date: '', loc: '', start: '', end: '', lec: 0, book: 0 }); }
+
+    function rebuildInputRow(type, val) {
+        const list = document.getElementById(type + '-input-list');
+        const div = document.createElement('div');
+        div.className = 'input-card';
+        if (type === 'hw') {
+            div.innerHTML = `<button class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+                <input type="text" class="hw-name" value="${val.name}" placeholder="과제명">
+                <input type="date" class="hw-start" value="${val.start||''}">
+                <input type="date" class="hw-end" value="${val.end||''}">`;
+        } else {
+            div.innerHTML = `<button class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+                <input type="text" class="${type}-name" value="${val.name}" placeholder="${type==='exam'?'시험 과목명':'수업명'}">
+                <input type="datetime-local" class="${type}-date" value="${val.date||''}">
+                <input type="text" class="${type}-loc" value="${val.loc||''}" placeholder="장소">`;
+        }
+        list.appendChild(div);
+    }
+
+    function saveAll() {
+        focusMin = parseInt(document.getElementById('input-focus-min').value) || 50;
+        restMin = parseInt(document.getElementById('input-rest-min').value) || 10;
+        
+        // 기존 회독수 유지하면서 일정 업데이트
+        const oldExams = dataStore.exam;
+        dataStore = { exam: [], hw: [], class: [] };
+        
+        ['exam', 'class'].forEach(type => {
+            const names = document.querySelectorAll('.' + type + '-name');
+            const dates = document.querySelectorAll('.' + type + '-date');
+            const locs = document.querySelectorAll('.' + type + '-loc');
+            names.forEach((n, i) => { 
+                if(n.value) {
+                    const old = oldExams.find(o => o.name === n.value);
+                    dataStore[type].push({ name: n.value, date: dates[i].value, loc: locs[i].value, lec: old?old.lec:0, book: old?old.book:0 });
+                }
+            });
+        });
+
+        const hn = document.querySelectorAll('.hw-name'), hs = document.querySelectorAll('.hw-start'), he = document.querySelectorAll('.hw-end');
+        hn.forEach((n, i) => { if(n.value) dataStore.hw.push({ name: n.value, start: hs[i].value, end: he[i].value, date: he[i].value }); });
+
+        localStorage.setItem('study_mate_final', JSON.stringify({ focusMin, restMin, dataStore }));
+        updateMainUI();
+        showPage('main-page');
+    }
+
+    // 두번째 페이지 회독 UI 업데이트
+    function updateProgressPage() {
+        const section = document.getElementById('progress-list-section');
+        section.innerHTML = '<h3>🎬 과목별 회독 체크</h3>';
+        if (dataStore.exam.length === 0) {
+            section.innerHTML += '<p style="font-size:0.75rem; color:#999;">시험 일정을 먼저 추가해주세요.</p>';
+            return;
+        }
+        dataStore.exam.forEach((ex, idx) => {
+            const div = document.createElement('div');
+            div.className = 'progress-box';
+            div.innerHTML = `
+                <div style="font-size:0.85rem; font-weight:bold; color:#1a4b8f;">${ex.name}</div>
+                <div style="margin-top:8px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.7rem;"><span>강의 (목표 2회)</span> <span>${ex.lec}/2</span></div>
+                    <div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${(ex.lec/2)*100}%"></div></div>
+                    <div class="prog-btns">
+                        <button class="prog-btn" onclick="changeCount(${idx}, 'lec', 1)">+1</button>
+                        <button class="prog-btn" onclick="changeCount(${idx}, 'lec', -1)">-1</button>
+                    </div>
+                </div>
+                <div style="margin-top:10px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.7rem;"><span>교재 (목표 7회)</span> <span>${ex.book}/7</span></div>
+                    <div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${(ex.book/7)*100}%"></div></div>
+                    <div class="prog-btns">
+                        <button class="prog-btn" onclick="changeCount(${idx}, 'book', 1)">+1</button>
+                        <button class="prog-btn" onclick="changeCount(${idx}, 'book', -1)">-1</button>
+                    </div>
+                </div>`;
+            section.appendChild(div);
+        });
+    }
+
+    function changeCount(idx, type, val) {
+        const goal = type === 'lec' ? 2 : 7;
+        dataStore.exam[idx][type] = Math.max(0, Math.min(goal, dataStore.exam[idx][type] + val));
+        localStorage.setItem('study_mate_final', JSON.stringify({ focusMin, restMin, dataStore }));
+        updateProgressPage();
+    }
+
+    function updateMainUI() {
+        const tl = document.getElementById('unified-timeline');
+        tl.innerHTML = '';
+        const labels = { exam: '📝 시험 리스트', hw: '📂 과제 리스트', class: '🏫 출석 수업' };
+        for (const type in dataStore) {
+            const items = dataStore[type];
+            if (items.length > 0) {
+                const section = document.createElement('div');
+                section.className = 'group-section';
+                let html = `<div class="group-title">${labels[type]}</div>`;
+                items.sort((a,b) => new Date(a.date) - new Date(b.date));
+                items.forEach(item => {
+                    const diff = Math.ceil((new Date(item.date) - new Date()) / 86400000);
+                    const dday = diff === 0 ? "D-Day" : (diff > 0 ? "D-" + diff : "D+" + Math.abs(diff));
+                    let detail = type === 'hw' ? `📅 ${item.start} ~ ${item.end}` : `${new Date(item.date).toLocaleString('ko-KR', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})} | ${item.loc}`;
+                    html += `<div class="item-row">
+                        <div><div class="item-main">${item.name}</div><div class="item-sub">${detail}</div></div>
+                        <div class="item-dday">${dday}</div>
+                    </div>`;
+                });
+                section.innerHTML = html;
+                tl.appendChild(section);
+            }
+        }
+        if (tl.innerHTML === '') tl.innerHTML = '<p style="color:#ccc; font-size:0.8rem; text-align:center;">설정에서 일정을 추가해주세요.</p>';
+    }
+
+    function setMode(m) { if(isRunning) toggleTimer(); timeLeft = (m === 'focus' ? focusMin : restMin) * 60; totalTime = timeLeft; updateDisplay(); document.getElementById('mode-focus').className = m==='focus'?'mode-btn active':'mode-btn'; document.getElementById('mode-rest').className = m==='rest'?'mode-btn active':'mode-btn'; }
+    function updateDisplay() { const m = Math.floor(timeLeft/60).toString().padStart(2,'0'), s = (timeLeft%60).toString().padStart(2,'0'); document.getElementById('time').innerText = m+':'+s; document.getElementById('sector').style.background = 'conic-gradient(#1a4b8f '+((totalTime-timeLeft)/totalTime*100)+'%, transparent 0)'; }
+    function toggleTimer() { const btn = document.getElementById('timerBtn'); if(!isRunning){ isRunning=true; btn.innerText="일시 정지"; timer=setInterval(()=>{timeLeft--; updateDisplay(); if(timeLeft<=0){clearInterval(timer); isRunning=false; document.getElementById('alarm-sound').play(); alert("시간 종료!"); setMode(currentMode==='focus'?'rest':'focus');}},1000); } else { isRunning=false; btn.innerText="다시 시작하기"; clearInterval(timer); } }
+</script>
+</body>
+</html>
